@@ -1,11 +1,13 @@
+#define _POSIX_C_SOURCE 199309L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define MAX_ROWS 10000 // maximum rows in the input
 #define MAX_COLS 10000 // maximum columns in the input
 
-// Load the grid from a file
+// --- Load the grid from a file ---
 int load_grid(const char *filename, char ***grid, int *rows, int *cols)
 {
     FILE *file = fopen(filename, "r");
@@ -19,7 +21,6 @@ int load_grid(const char *filename, char ***grid, int *rows, int *cols)
     *rows = 0;
     *cols = 0;
 
-    // Allocate temporary array of pointers
     *grid = malloc(MAX_ROWS * sizeof(char *));
     if (!*grid)
     {
@@ -47,6 +48,7 @@ int load_grid(const char *filename, char ***grid, int *rows, int *cols)
     return 1;
 }
 
+// Free grid memory
 void free_grid(char **grid, int rows)
 {
     for (int i = 0; i < rows; i++)
@@ -54,21 +56,18 @@ void free_grid(char **grid, int rows)
     free(grid);
 }
 
-// Find start 'S'
+// Find the start 'S'
 void find_start(char **grid, int rows, int cols, int *start_r, int *start_c)
 {
     for (int r = 0; r < rows; r++)
-    {
         for (int c = 0; c < cols; c++)
-        {
             if (grid[r][c] == 'S')
             {
                 *start_r = r;
                 *start_c = c;
                 return;
             }
-        }
-    }
+
     fprintf(stderr, "Start 'S' not found\n");
     exit(EXIT_FAILURE);
 }
@@ -76,20 +75,17 @@ void find_start(char **grid, int rows, int cols, int *start_r, int *start_c)
 // Count timelines using dynamic programming
 unsigned long long count_timelines(char **grid, int rows, int cols)
 {
-    // Allocate dp array on heap
     unsigned long long **dp = malloc(rows * sizeof(unsigned long long *));
     for (int r = 0; r < rows; r++)
-    {
         dp[r] = calloc(cols, sizeof(unsigned long long));
-    }
 
     int start_r, start_c;
     find_start(grid, rows, cols, &start_r, &start_c);
+
     if (start_r + 1 < rows)
         dp[start_r + 1][start_c] = 1;
 
     for (int r = start_r + 1; r < rows; r++)
-    {
         for (int c = 0; c < cols; c++)
         {
             unsigned long long count = dp[r][c];
@@ -113,13 +109,11 @@ unsigned long long count_timelines(char **grid, int rows, int cols)
                 }
             }
         }
-    }
 
     unsigned long long total = 0;
     for (int c = 0; c < cols; c++)
         total += dp[rows - 1][c];
 
-    // Free dp
     for (int r = 0; r < rows; r++)
         free(dp[r]);
     free(dp);
@@ -136,8 +130,23 @@ int main()
     if (!load_grid(filename, &grid, &rows, &cols))
         return EXIT_FAILURE;
 
+    // --- Start timer ---
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     unsigned long long total = count_timelines(grid, rows, cols);
+
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    long seconds = end.tv_sec - start.tv_sec;
+    long nanoseconds = end.tv_nsec - start.tv_nsec;
+    if (nanoseconds < 0)
+    {
+        seconds--;
+        nanoseconds += 1000000000;
+    }
+
     printf("Total timelines: %llu\n", total);
+    printf("Execution time: %ld.%09ld seconds\n", seconds, nanoseconds);
 
     free_grid(grid, rows);
     return 0;

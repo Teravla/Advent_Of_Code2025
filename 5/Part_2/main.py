@@ -16,7 +16,6 @@ def parse_ranges(filename="resources.txt"):
 
 
 def merge_ranges(ranges):
-    """Fusionne des intervalles qui se chevauchent."""
     if not ranges:
         return []
     ranges.sort()
@@ -27,7 +26,6 @@ def merge_ranges(ranges):
         last_start, last_end = merged[-1]
 
         if start <= last_end + 1:
-            # Fusion des intervalles
             merged[-1] = (last_start, max(last_end, end))
         else:
             merged.append((start, end))
@@ -50,11 +48,11 @@ def main():
         resource_file = os.path.join(os.path.dirname(__file__), "..", "resources.txt")
         ranges = parse_ranges(resource_file)
     except FileNotFoundError:
-        print("Erreur : fichier 'resources.txt' introuvable.")
+        print("Error: 'resources.txt' file not found.")
         return
 
     result = count_fresh_ids(ranges)
-    print("Total d'ingredient IDs frais :", result)
+    print("Total number of fresh ingredient IDs:", result)
 
 
 if __name__ == "__main__":

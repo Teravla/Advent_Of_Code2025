@@ -3,8 +3,8 @@ import re
 from itertools import combinations
 
 
-def parse_machine(line):
-    # Extrait diagramme, boutons, ignore les jolts
+def parse_machine(line: str) -> tuple[list[int], list[list[int]]]:
+    """Parse a machine line into target state and button definitions."""
     diagram_match = re.search(r"\[([.#]+)\]", line)
     buttons_matches = re.findall(r"\(([\d,]+)\)", line)
 
@@ -15,26 +15,33 @@ def parse_machine(line):
     return target, buttons
 
 
-def min_presses(target, buttons):
-    n = len(target)
-    m = len(buttons)
-
-    # Convertir boutons en vecteurs binaires
+def convert_to_vectors(buttons: list[list[int]], n: int) -> list[list[int]]:
+    """Convert button definitions to binary vectors."""
     btn_vecs = []
     for b in buttons:
         vec = [0] * n
         for idx in b:
             vec[idx] = 1
         btn_vecs.append(vec)
+    return btn_vecs
 
-    # Brute-force sur toutes les combinaisons possibles
-    # (suffisant pour petites tailles, pour AoC 2025 Day 10)
+
+def calculate_state(combo: tuple[int, ...], btn_vecs: list[list[int]], n: int) -> list[int]:
+    """Calculate the resulting state from a combination of button presses."""
+    state = [0] * n
+    for i in combo:
+        for j in range(n):
+            state[j] ^= btn_vecs[i][j]
+    return state
+
+
+def min_presses(target, buttons):
+    n = len(target)
+    m = len(buttons)
+    btn_vecs = convert_to_vectors(buttons, n)
     for k in range(1, m + 1):
         for combo in combinations(range(m), k):
-            state = [0] * n
-            for i in combo:
-                for j in range(n):
-                    state[j] ^= btn_vecs[i][j]
+            state = calculate_state(combo, btn_vecs, n)
             if state == target:
                 return k
     return 0
